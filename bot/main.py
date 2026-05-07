@@ -91,17 +91,17 @@ async def post_init(application: Application):
         logger.warning("JobQueue is not available. Reminders will not run.")
         return
 
-    cycle = db.get_billing_cycle()
-    start_day = cycle["start"]
-    end_day = cycle["end"]
-
     # Payment start reminder — fires daily at 12:00 Ethiopian time; only sends on billing start day
     async def _payment_start_guard(ctx):
+        cycle = db.get_billing_cycle()
+        start_day = cycle["start"]
         _, __, eth_day = to_ethiopian(now_eth())
         if eth_day == start_day:
             await send_payment_start_reminder(ctx)
 
     async def _one_day_guard(ctx):
+        cycle = db.get_billing_cycle()
+        end_day = cycle["end"]
         eth_year, eth_month, eth_day = to_ethiopian(now_eth())
         # Ethiopian months 1-12 have 30 days; month 13 (Pagume) has 5 or 6
         days_in_eth_month = eth_days_in_month(eth_year, eth_month)
@@ -110,6 +110,8 @@ async def post_init(application: Application):
             await send_one_day_reminder(ctx)
 
     async def _final_day_guard(ctx):
+        cycle = db.get_billing_cycle()
+        end_day = cycle["end"]
         _, __, eth_day = to_ethiopian(now_eth())
         if eth_day == end_day:
             await send_final_day_reminder(ctx)
@@ -121,6 +123,8 @@ async def post_init(application: Application):
 
     # ── Monthly cycle reset — fires at 00:05 Ethiopian time the day after end day ──
     async def _monthly_reset_guard(ctx):
+        cycle = db.get_billing_cycle()
+        end_day = cycle["end"]
         eth_year, eth_month, eth_day = to_ethiopian(now_eth())
         # Ethiopian months 1-12 always have 30 days, so reset is always end+1 or wraps to 1
         days_in_eth_month = eth_days_in_month(eth_year, eth_month)
@@ -165,12 +169,12 @@ def build_application() -> Application:
     # ─── Inline callback fallback handlers ──────────────────────────────────
     app.add_handler(CallbackQueryHandler(profile_callback, pattern=r"^profile_card$"))
     app.add_handler(CallbackQueryHandler(support_history_callback, pattern=r"^history_view$"))
-    app.add_handler(CallbackQueryHandler(admin_panel_callback, pattern=r"^adm_"))
+    app.add_handler(CallbackQueryHandler(admin_panel_callback, pattern=r"^adm_(manage|settings|users|inbox|report|back)$"))
     app.add_handler(CallbackQueryHandler(inbox_callback, pattern=r"^inbox_|^approve_|^reject_|^reply_sup_"))
     app.add_handler(CallbackQueryHandler(report_callback, pattern=r"^report_"))
     app.add_handler(CallbackQueryHandler(users_callback, pattern=r"^users_"))
-    app.add_handler(CallbackQueryHandler(settings_callback, pattern=r"^adm_settings$"))
-    app.add_handler(CallbackQueryHandler(admin_manage_callback, pattern=r"^adm_manage$|^remove_adm_"))
+    app.add_handler(CallbackQueryHandler(settings_callback, pattern=r"^adm_(edit_msgs|notify_toggle|billing_cycle|bank)|^edit_msg_|^toggle_|^set_bill_|^bank_"))
+    app.add_handler(CallbackQueryHandler(admin_manage_callback, pattern=r"^adm_(add_admin|remove_admin|list_admins)$|^remove_adm_"))
 
     # ─── Unknown message fallback ────────────────────────────────────────────
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, _unknown_text))

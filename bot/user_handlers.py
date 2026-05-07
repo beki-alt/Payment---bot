@@ -41,7 +41,7 @@ from image_gen import generate_membership_card
 
 logger = logging.getLogger(__name__)
 
-CHANNEL_ID = os.getenv("CHANNEL_ID", "")
+CHANNEL_ID = os.getenv("CHANNEL_ID", "").strip()
 
 # ── Conversation States ─────────────────────────────────────────────────────
 (
@@ -50,6 +50,16 @@ CHANNEL_ID = os.getenv("CHANNEL_ID", "")
     PAYMENT_CONFIRM,
     SUPPORT_MSG_INPUT,
 ) = range(4)
+
+
+def _resolve_receipt_chat_id() -> Optional[int]:
+    if not CHANNEL_ID:
+        return None
+    try:
+        return int(CHANNEL_ID)
+    except ValueError:
+        logger.error("Invalid CHANNEL_ID value. It must be numeric.")
+        return None
 
 
 # ─────────────────────────────────────────────
@@ -248,6 +258,14 @@ async def confirm_payment_callback(update: Update, context: ContextTypes.DEFAULT
         return ConversationHandler.END
 
     if data == "confirm_payment":
+        receipt_chat_id = _resolve_receipt_chat_id()
+        if receipt_chat_id is None:
+            await query.edit_message_text(
+                "❌ *የደረሰኝ መቀበያ ቻናል አልተቀናበረም።*\n\nእባክዎ አስተዳዳሪን ያናግሩ።",
+                parse_mode="Markdown",
+            )
+            return ConversationHandler.END
+
         file_id = context.user_data.get("receipt_file_id")
         if not file_id:
             await query.edit_message_text("❌ ፎቶ አልተገኘም። እንደገና ይሞክሩ።")
@@ -257,7 +275,7 @@ async def confirm_payment_callback(update: Update, context: ContextTypes.DEFAULT
 
         try:
             forwarded = await query.get_bot().send_photo(
-                chat_id=CHANNEL_ID,
+                chat_id=receipt_chat_id,
                 photo=file_id,
                 caption=(
                     f"📸 *አዲስ ደረሰኝ*\n\n"
