@@ -182,6 +182,10 @@ async def admin_manage_callback(update: Update, context: ContextTypes.DEFAULT_TY
     data = query.data
     user_id = query.from_user.id
 
+    if data == "adm_manage":
+        await _show_admin_manage(query)
+        return
+
     if not db.is_super_admin(user_id):
         await query.answer("⛔ ለዋና አስተዳዳሪ ብቻ ነው።", show_alert=True)
         return
@@ -1122,9 +1126,9 @@ async def send_payment_start_reminder(context: ContextTypes.DEFAULT_TYPE):
     cycle = db.get_billing_cycle()
     template = db.get_setting("msg_payment_start", "📢 የክፍያ ጊዜ ደርሷል!")
     msg = template.format(start_day=cycle["start"], end_day=cycle["end"])
-    users = db.get_unpaid_users()
     # Reset all users to unpaid at cycle start
     db.reset_all_users_to_unpaid()
+    users = db.get_all_users()
     for user in users:
         try:
             await context.bot.send_message(chat_id=user["telegram_id"], text=msg)
@@ -1270,12 +1274,12 @@ def build_admin_conversation() -> ConversationHandler:
     return ConversationHandler(
         entry_points=[
             CommandHandler("admin", admin_panel),
-            CallbackQueryHandler(admin_manage_callback, pattern=r"^adm_(add_admin|remove_admin|list_admins|manage)$|^remove_adm_"),
+            CallbackQueryHandler(admin_manage_callback, pattern=r"^adm_(add_admin|remove_admin|list_admins)$|^remove_adm_"),
             CallbackQueryHandler(settings_callback, pattern=r"^adm_(edit_msgs|notify_toggle|billing_cycle|bank)|^edit_msg_|^toggle_|^set_bill_|^bank_"),
             CallbackQueryHandler(users_callback, pattern=r"^users_"),
             CallbackQueryHandler(inbox_callback, pattern=r"^inbox_|^approve_|^reject_|^reply_sup_"),
             CallbackQueryHandler(report_callback, pattern=r"^report_"),
-            CallbackQueryHandler(admin_panel_callback, pattern=r"^adm_(settings|users|inbox|report|back)$"),
+            CallbackQueryHandler(admin_panel_callback, pattern=r"^adm_(manage|settings|users|inbox|report|back)$"),
         ],
         states={
             ADD_ADMIN_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_add_admin_id)],

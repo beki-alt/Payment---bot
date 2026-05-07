@@ -575,8 +575,19 @@ def get_all_settings() -> Dict[str, str]:
 
 
 def get_billing_cycle() -> Dict[str, int]:
-    start = int(get_setting("billing_start_day", "25"))
-    end = int(get_setting("billing_end_day", "5"))
+    try:
+        start = int(get_setting("billing_start_day", "25"))
+    except Exception:
+        start = 25
+    try:
+        end = int(get_setting("billing_end_day", "5"))
+    except Exception:
+        end = 5
+    # Keep values in valid Ethiopian day range
+    if not (1 <= start <= 30):
+        start = 25
+    if not (1 <= end <= 30):
+        end = 5
     return {"start": start, "end": end}
 
 
