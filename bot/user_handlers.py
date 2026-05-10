@@ -2,7 +2,7 @@
 user_handlers.py - User Interface (All text in Amharic)
 Handles: Profile, Pay/Renew, Payment Schedule, Support & History
 """
-
+import traceback
 import os
 import logging
 from datetime import datetime, date
@@ -287,8 +287,7 @@ async def confirm_payment_callback(update: Update, context: ContextTypes.DEFAULT
             )
             channel_msg_id = forwarded.message_id
         except Exception as e:
-            import traceback
-logger.error(traceback.format_exc())
+            logger.error(traceback.format_exc())
             
             await query.edit_message_text(
                 "❌ *ደረሰኝ ወደ ቻናሉ መላክ አልተቻለም።*\n\n"
