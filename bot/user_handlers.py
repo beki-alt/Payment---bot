@@ -287,7 +287,9 @@ async def confirm_payment_callback(update: Update, context: ContextTypes.DEFAULT
             )
             channel_msg_id = forwarded.message_id
         except Exception as e:
-            logger.error(f"Failed to forward receipt to channel: {e}")
+            import traceback
+logger.error(traceback.format_exc())
+            
             await query.edit_message_text(
                 "❌ *ደረሰኝ ወደ ቻናሉ መላክ አልተቻለም።*\n\n"
                 "እባክዎ ቆይተው ወይም ድጋፍ ቡድኑን ያናግሩ።",
