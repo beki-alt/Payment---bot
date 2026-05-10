@@ -281,7 +281,7 @@ async def confirm_payment_callback(update: Update, context: ContextTypes.DEFAULT
                     f"📸 *አዲስ ደረሰኝ*\n\n"
                     f"👤 ተጠቃሚ: {db.get_user(tg_id)['name']}\n"
                     f"🆔 ID: `{tg_id}`\n"
-                    f"📅 ቀን (ዓ.ም): {format_eth_date(now_eth())}"
+                    f"📅 ቀን (ዓ.ም): {format_eth_date(datetime.now(ETH_TZ))}"
                 ),
                 parse_mode="Markdown",
             )
